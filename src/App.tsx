@@ -33,7 +33,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/diary" component={() => <ProtectedRoute component={DiaryPage} />} />
+      <Route path="/diary" component={() =>import DiaryListPage from "@/pages/DiaryListPage";<ProtectedRoute component={DiaryPage} />} />
+      <Route path="/" component={DiaryListPage} />
+      <Route path="/diary" component={DiaryPage} />
       <Route path="/mood" component={() => <ProtectedRoute component={MoodPage} />} />
       <Route path="/habits" component={() => <ProtectedRoute component={HabitsPage} />} />
       <Route path="/calendar" component={() => <ProtectedRoute component={CalendarPage} />} />
