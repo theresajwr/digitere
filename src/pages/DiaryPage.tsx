@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/lib/trpc";
+import { supabase } from "@/supabaseClient";
 import { ArrowLeft, Upload, X, Image as ImageIcon, Video } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -19,33 +19,39 @@ export default function DiaryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Create diary entry mutation
-  const createEntryMutation = trpc.diary.create.useMutation({
-    onSuccess: () => {
-      toast.success("Diary entry saved!");
-      setTitle("");
-      setContent("");
-      setUploadedFiles([]);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to save entry");
-    },
-  });
+  const handleSaveEntry = async () => {
+  if (!title.trim() && !content.trim()) {
+    toast.error("Please add a title or content");
+    return;
+  }
 
-  // Upload media mutation
-  const uploadMediaMutation = trpc.media.upload.useMutation({
-    onSuccess: (result: any) => {
-      if (result) {
-        const fileUrl = result.fileUrl || "";
-        const fileType = result.fileType || "image";
-        const fileName = result.fileName || "File";
-        setUploadedFiles([...uploadedFiles, { url: fileUrl, type: fileType, name: fileName }]);
-        toast.success("File uploaded successfully!");
-      }
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to upload file");
-    },
-  });
+  setIsLoading(true);
+
+  try {
+    const { error } = await supabase.from("diaries").insert([
+      {
+        title: title || null,
+        content: content || null,
+      },
+    ]);
+
+    if (error) {
+      toast.error("Failed to save entry: " + error.message);
+      return;
+    }
+
+    toast.success("Diary entry saved!");
+
+    setTitle("");
+    setContent("");
+    setUploadedFiles([]);
+  } catch (err) {
+    toast.error("Unexpected error");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,7 +216,7 @@ export default function DiaryPage() {
           <Button
             className="flex-1 bg-accent hover:bg-accent/90 text-white"
             onClick={handleSaveEntry}
-            disabled={isLoading || createEntryMutation.isPending}
+            disabled={isLoading}
           >
             {isLoading ? "Saving..." : "Save Entry"}
           </Button>
@@ -219,3 +225,6 @@ export default function DiaryPage() {
     </div>
   );
 }
+git add .
+git commit -m "replace trpc diary save with supabase"
+git push
